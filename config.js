@@ -1,0 +1,1 @@
+window.TORTUGA_CONFIG={"key":"sb_publishable_-Jn_Jth5qzaf1SQA4fPn5A_LyaarVMU","url":"https://ovbnyebzkexoowudhdhn.supabase.co"};
