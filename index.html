@@ -22,7 +22,7 @@ async function refreshCloud(){
  if(cloudBusy)return cloudBusy;
  cloudBusy=(async()=>{try{
  const [rows,cats,opts,links,photos]=await Promise.all(['menu_items','categories','menu_options','item_options','menu_photos'].map(cloudRead));
- if(!rows.length||!cats.length)throw Error('empty menu');
+ if(!cats.length)throw Error('empty categories');
  const byOpt=Object.fromEntries(opts.map(o=>[o.id,o]));
  const live=rows.sort((a,b)=>a.sort_order-b.sort_order).map(x=>({id:x.id,cat:x.category_id,...x.names,desc:x.descriptions.ru||'',desc_en:x.descriptions.en||'',desc_zh:x.descriptions.zh||'',price:Number(x.price),multi:x.multi,optional:x.optional,opts:links.filter(l=>l.item_id===x.id).sort((a,b)=>a.sort_order-b.sort_order).map(l=>byOpt[l.option_id].names.ru)}));
  const nextEdits=Object.fromEntries(rows.map(x=>[x.id,{status:x.status}]));

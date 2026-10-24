@@ -1,7 +1,7 @@
 'use strict';
 const cfg=window.TORTUGA_CONFIG,$=id=>document.getElementById(id);
 const say=s=>{$('message').textContent=s};
-let session=null,dishes=[],photos=[],options=[],busy=false;
+let session=null,dishes=[],photos=[],options=[],categories=[],busy=false;
 const storeKey='tortuga-captain-session';
 try{session=JSON.parse(sessionStorage.getItem(storeKey)||'null')}catch{}
 function saveSession(s){session=s;if(s)sessionStorage.setItem(storeKey,JSON.stringify(s));else sessionStorage.removeItem(storeKey)}
@@ -24,7 +24,7 @@ async function exclusive(fn){if(busy)return;busy=true;document.querySelectorAll(
 async function load(){
  const member=await request('/rest/v1/menu_admins?select=active&active=eq.true');
  if(!member?.length){saveSession(null);showLogin();throw Error('У аккаунта нет доступа к управлению меню.')}
- [dishes,photos,options]=await Promise.all(['menu_items?select=*&order=sort_order','menu_photos?select=*','menu_options?select=*'].map(t=>request('/rest/v1/'+t)));
+ [dishes,photos,options,categories]=await Promise.all(['menu_items?select=*&order=sort_order','menu_photos?select=*','menu_options?select=*','categories?select=*&order=sort_order'].map(t=>request('/rest/v1/'+t)));
  $('login').hidden=true;$('panel').hidden=false;render();say('Меню загружено. Сохраняйте изменения кнопкой у блюда.');
 }
 $('login').onsubmit=e=>{e.preventDefault();exclusive(async()=>{
@@ -38,6 +38,7 @@ $('reload').onclick=()=>exclusive(load);$('search').oninput=renderDishes;
 function element(tag,text){const el=document.createElement(tag);if(text!==undefined)el.textContent=text;return el}
 function statusSelect(value){const s=element('select');for(const [v,t] of [['yes','В наличии'],['no','Нет в наличии'],['later','Будет позже']]){const o=element('option',t);o.value=v;s.append(o)}s.value=value;return s}
 function render(){
+ if(typeof renderDishManager==='function')renderDishManager();
  $('sauces').replaceChildren();
  const labels=['Тар-тар','Барбекю','Кетчуп','Сырный','Сладкий чили','Шрирача'];
  for(const o of options.filter(x=>labels.includes(x.names.ru))){const row=element('div');row.className='row';const select=statusSelect(o.status),save=element('button','Сохранить');row.append(element('span',o.names.ru),select,save);save.onclick=()=>exclusive(async()=>{const v=await request('/rest/v1/menu_options?id=eq.'+o.id,{method:'PATCH',body:{status:select.value}});if(v?.length!==1)throw Error('Нет прав на изменение соуса.');o.status=select.value;say('Наличие соуса сохранено во всех связанных блюдах.')});$('sauces').append(row)}
@@ -45,7 +46,7 @@ function render(){
 }
 function renderDishes(){
  const q=$('search').value.trim().toLowerCase();$('dishes').replaceChildren();
- for(const x of dishes.filter(x=>(x.id+' '+x.names.ru).toLowerCase().includes(q))){
+ for(const x of dishes.filter(x=>!x.archived&&(x.id+' '+x.names.ru).toLowerCase().includes(q))){
  const card=element('article');card.className='card';card.append(element('h3',x.id+' · '+x.names.ru));
  const row=element('div');row.className='row';const price=element('input');price.type='number';price.min='0';price.max='99999999.99';price.step='.01';price.value=x.price;price.className='price';price.setAttribute('aria-label','Цена '+x.names.ru);
  const st=statusSelect(x.status);st.setAttribute('aria-label','Наличие '+x.names.ru);const save=element('button','Сохранить цену и наличие');row.append(price,element('span','₽'),st,save);card.append(row);
@@ -54,6 +55,7 @@ function renderDishes(){
  const file=element('input');file.type='file';file.accept='image/jpeg,image/png,image/webp';file.setAttribute('aria-label','Фото '+x.names.ru);card.append(file);
  file.onchange=()=>{const f=file.files[0];if(f)exclusive(async()=>{const blob=await resizePhoto(f),p=x.id+'/'+crypto.randomUUID()+'.jpg';await request('/storage/v1/object/menu-photos/'+p,{method:'POST',body:blob,raw:true});const existing=photos.find(p=>p.item_id===x.id);const saved=await request('/rest/v1/menu_photos'+(existing?'?item_id=eq.'+x.id:''),{method:existing?'PATCH':'POST',body:existing?{storage_path:p}:{item_id:x.id,storage_path:p}});if(saved?.length!==1)throw Error('Фото загружено, но не привязано к блюду. Обновите данные и повторите.');photos=photos.filter(p=>p.item_id!==x.id).concat(saved);renderDishes();say(x.id+': фотография сохранена.')})};
  if(photo){const remove=element('button','Убрать фото из меню');remove.onclick=()=>exclusive(async()=>{if(remove.dataset.confirmed!=='yes'){remove.dataset.confirmed='yes';remove.textContent='Нажмите ещё раз, чтобы убрать фото';say('Повторное нажатие уберёт фото '+x.id+' из меню. Файл останется в хранилище.');return;}const v=await request('/rest/v1/menu_photos?item_id=eq.'+x.id,{method:'DELETE'});if(v?.length!==1)throw Error('Не удалось убрать фото.');photos=photos.filter(p=>p.item_id!==x.id);renderDishes();say('Фото убрано из меню. Исходный файл сохранён в хранилище.')});card.append(remove)}
+ if(typeof addArchiveButton==='function')addArchiveButton(card,x);
  $('dishes').append(card);
  }
 }
