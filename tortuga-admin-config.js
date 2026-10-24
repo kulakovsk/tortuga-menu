@@ -1,0 +1,1 @@
+window.TORTUGA_CONFIG={"url":"https://ovbnyebzkexoowudhdhn.supabase.co","key":"sb_publishable_-Jn_Jth5qzaf1SQA4fPn5A_LyaarVMU","loginKey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im92Ym55ZWJ6a2V4b293dWRoZGhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI4NjA4MjEsImV4cCI6MjEwODQzNjgyMX0.TleEKbI5lRpa3ALWEYaoliX4Ym2diPZfRI5D1FDalH0"};
