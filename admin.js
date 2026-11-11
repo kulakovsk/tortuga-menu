@@ -1,3 +1,4 @@
+let barDishes=[],barServings=[],barCats=[];
 'use strict';
 const cfg=window.TORTUGA_CONFIG,$=id=>document.getElementById(id);
 const say=s=>{$('message').textContent=s};
@@ -25,7 +26,7 @@ async function exclusive(fn){if(busy)return;busy=true;document.querySelectorAll(
 async function load(){
  const member=await request('/rest/v1/menu_admins?select=active&active=eq.true');
  if(!member?.length){saveSession(null);showLogin();throw Error('У аккаунта нет доступа к управлению меню.')}
- [dishes,photos,options,categories]=await Promise.all(['menu_items?select=*&order=sort_order','menu_photos?select=*','menu_options?select=*','categories?select=*&order=sort_order'].map(t=>request('/rest/v1/'+t)));
+ [dishes,photos,options,categories,barDishes,barServings,barCats]=await Promise.all(['menu_items?select=*&order=sort_order','menu_photos?select=*','menu_options?select=*','categories?select=*&order=sort_order','bar_items?select=*&order=sort_order','bar_servings?select=*&order=sort_order','bar_categories?select=*&order=sort_order'].map(t=>request('/rest/v1/'+t)));
  $('login').hidden=true;$('panel').hidden=false;render();say('Меню загружено. Сохраняйте изменения кнопкой у блюда.');
 }
 $('login').onsubmit=e=>{e.preventDefault();exclusive(async()=>{
@@ -43,7 +44,7 @@ function render(){
  $('sauces').replaceChildren();
  const labels=['Тар-тар','Барбекю','Кетчуп','Сырный','Сладкий чили','Шрирача'];
  for(const o of options.filter(x=>labels.includes(x.names.ru))){const row=element('div');row.className='row';const select=statusSelect(o.status),save=element('button','Сохранить');row.append(element('span',o.names.ru),select,save);save.onclick=()=>exclusive(async()=>{const v=await request('/rest/v1/menu_options?id=eq.'+o.id,{method:'PATCH',body:{status:select.value}});if(v?.length!==1)throw Error('Нет прав на изменение соуса.');o.status=select.value;say('Наличие соуса сохранено во всех связанных блюдах.')});$('sauces').append(row)}
- renderDishes();
+ renderDishes();if(typeof renderBarManager==='function')renderBarManager();
 }
 function renderDishes(){
  const q=$('search').value.trim().toLowerCase();$('dishes').replaceChildren();
