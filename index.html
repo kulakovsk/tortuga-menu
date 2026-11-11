@@ -102,7 +102,7 @@ function initializeBar(){
   document.querySelectorAll('[data-serving]').forEach(s=>s.onchange=()=>{barSelected[s.dataset.serving]=s.value;render()});
  };
  const previousAdd=addItem;
- addItem=async function(id){if(item(id)?.bar){if(!await refreshCloud())return;const x=item(id);if(x?.bar&&state(x)==='yes')putItem(id,[barSelected[id]||x.opts[0]]);return}return previousAdd(id)};
+ addItem=async function(id){const clicked=item(id);if(clicked?.bar){const requested=barSelected[id]||clicked.opts[0];if(!await refreshCloud())return;const x=item(id);if(x?.bar&&x.opts.includes(requested)&&barState(x,[requested])==='yes')putItem(id,[requested]);return}return previousAdd(id)};
  render();
 }
 
