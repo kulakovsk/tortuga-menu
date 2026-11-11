@@ -70,6 +70,7 @@ function reviewedOption(o){
  const r=TRANSLATION_REVIEW.options[o.names.ru];
  return r&&o.names.en===r.source[0]&&o.names.zh===r.source[1]?r.patch:[o.names.en,o.names.zh];
 }
+const BAR_VISIBLE=false;
 let menuSection='kitchen';
 const barSelected={};
 function servingLabel(v){
@@ -90,8 +91,10 @@ function initializeBar(){
  words.zh.notice='⚓ 试用版菜单。请向服务员确认菜品和饮品的供应情况及配料。订单不会自动发送。';
  const previousRender=render;
  render=function(){
+  if(!BAR_VISIBLE)menuSection='kitchen';
+  $('menuTabs').style.display=BAR_VISIBLE?'':'none';
   previousRender();document.documentElement.lang=lang;
-  $('menuTabs').innerHTML=['kitchen','bar'].map(s=>'<button data-section="'+s+'" class="'+(s===menuSection?'active':'')+'" aria-pressed="'+(s===menuSection)+'">'+({ru:{kitchen:'Кухня',bar:'Бар'},en:{kitchen:'Kitchen',bar:'Bar'},zh:{kitchen:'餐食',bar:'酒吧'}}[lang][s])+'</button>').join('');
+  $('menuTabs').innerHTML=(BAR_VISIBLE?['kitchen','bar']:[]).map(s=>'<button data-section="'+s+'" class="'+(s===menuSection?'active':'')+'" aria-pressed="'+(s===menuSection)+'">'+({ru:{kitchen:'Кухня',bar:'Бар'},en:{kitchen:'Kitchen',bar:'Bar'},zh:{kitchen:'餐食',bar:'酒吧'}}[lang][s])+'</button>').join('');
   document.querySelectorAll('[data-section]').forEach(b=>b.onclick=()=>{menuSection=b.dataset.section;category='all';$('search').value='';render();$('cats').scrollLeft=0});
   $('search').placeholder={ru:'Поиск по меню',en:'Search menu',zh:'搜索菜单'}[lang];
   $('menuTabs').setAttribute('aria-label',{ru:'Раздел меню',en:'Menu section',zh:'菜单分区'}[lang]);
@@ -102,7 +105,7 @@ function initializeBar(){
   document.querySelectorAll('[data-serving]').forEach(s=>s.onchange=()=>{barSelected[s.dataset.serving]=s.value;render()});
  };
  const previousAdd=addItem;
- addItem=async function(id){const clicked=item(id);if(clicked?.bar){const requested=barSelected[id]||clicked.opts[0];if(!await refreshCloud())return;const x=item(id);if(x?.bar&&x.opts.includes(requested)&&barState(x,[requested])==='yes')putItem(id,[requested]);return}return previousAdd(id)};
+ addItem=async function(id){const clicked=item(id);if(clicked?.bar){if(!BAR_VISIBLE)return;const requested=barSelected[id]||clicked.opts[0];if(!await refreshCloud())return;const x=item(id);if(x?.bar&&x.opts.includes(requested)&&barState(x,[requested])==='yes')putItem(id,[requested]);return}return previousAdd(id)};
  render();
 }
 
