@@ -11,6 +11,7 @@ function renderBarManager(){
   list.replaceChildren();const q=search.value.trim().toLowerCase();
   for(const x of barDishes.filter(x=>(x.id+' '+x.names.ru).toLowerCase().includes(q))){
    const card=element('article');card.className='card';card.append(element('h3',x.id+' · '+x.names.ru));
+   if(x.presentation?.flavors?.length)card.append(element('p','Вкусы: '+x.presentation.flavors.map(f=>f.ru).join(', ')+'. Цена и наличие общие для всех вкусов этой марки.'));
    card.append(element('p',barCats.find(c=>c.id===x.category_id)?.names.ru||x.category_id));
    const row=element('div');row.className='row';const status=statusSelect(x.status),save=element('button','Сохранить наличие напитка');status.setAttribute('aria-label','Наличие напитка '+x.id);row.append(status,save);card.append(row);
    save.onclick=()=>exclusive(async()=>{const result=await request('/rest/v1/bar_items?id=eq.'+encodeURIComponent(x.id),{method:'PATCH',body:{status:status.value}});if(result?.length!==1)throw Error('Наличие напитка не сохранено.');x.status=result[0].status;say(x.id+': наличие напитка сохранено.');});
