@@ -25,7 +25,9 @@ window.TORTUGA_BAR_DATA=function(categories,items,servings){
    return {id:s.id,label,ml:s.volume_ml,kind:s.kind,price:Number(s.price),status:s.status};
   });
   if(!variants.length)throw Error('Bar item has no servings');
-  return {id:x.id,cat:x.category_id,...x.names,desc:x.descriptions?.ru||'',desc_en:x.descriptions?.en||'',desc_zh:x.descriptions?.zh||'',status:x.status,price:variants[0].price,opts:variants.map(v=>v.label),variants,bar:true};
+  const p=x.presentation;
+  if(!p||!['heading','brand','taste','flavor'].every(k=>p[k]&&['ru','en','zh'].every(l=>typeof p[k][l]==='string'))||!Array.isArray(p.flavors)||!p.flavors.every(names))throw Error('Missing v2 presentation');
+  return {...p,id:x.id,cat:x.category_id,...x.names,desc:x.descriptions?.ru||'',desc_en:x.descriptions?.en||'',desc_zh:x.descriptions?.zh||'',status:x.status,price:variants[0].price,opts:[...variants.map(v=>v.label),...p.flavors.map(f=>f.ru)],variants,bar:true};
  });
  if(servings.some(s=>!ids.has(s.item_id)))throw Error('Orphan bar serving');
  return {items:result,cats};
